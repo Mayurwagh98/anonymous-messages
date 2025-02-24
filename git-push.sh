@@ -45,41 +45,23 @@ else
     # Generate commit message based on changes
     echo -e "\n${YELLOW}Generating commit message based on changes...${NC}"
     
-    # Get summary of changes
+    # Get primary changed file
     files_changed=$(git diff --cached --name-status)
-    added_files=$(echo "$files_changed" | grep ^A | wc -l)
-    modified_files=$(echo "$files_changed" | grep ^M | wc -l)
-    deleted_files=$(echo "$files_changed" | grep ^D | wc -l)
+    primary_file=$(echo "$files_changed" | head -n 1 | cut -f2)
+    total_files=$(echo "$files_changed" | wc -l)
     
     # Build commit message
-    commit_message=""
-    if [ $added_files -gt 0 ]; then
-        commit_message+="Add $added_files files"
-    fi
-    if [ $modified_files -gt 0 ]; then
-        if [ ! -z "$commit_message" ]; then
-            commit_message+=", "
-        fi
-        commit_message+="Modify $modified_files files"
-    fi
-    if [ $deleted_files -gt 0 ]; then
-        if [ ! -z "$commit_message" ]; then
-            commit_message+=", "
-        fi
-        commit_message+="Delete $deleted_files files"
-    fi
-    
-    # Add detailed changes
-    commit_message+="\n\nChanges include:\n"
-    while IFS= read -r line; do
-        status=${line:0:1}
-        file=${line:2}
-        case $status in
-            A) commit_message+="- Added: $file\n" ;;
-            M) commit_message+="- Modified: $file\n" ;;
-            D) commit_message+="- Deleted: $file\n" ;;
+    if [ $total_files -eq 1 ]; then
+        # For single file changes
+        case ${files_changed:0:1} in
+            A) commit_message="Add ${primary_file}" ;;
+            M) commit_message="Update ${primary_file}" ;;
+            D) commit_message="Remove ${primary_file}" ;;
         esac
-    done <<< "$files_changed"
+    else
+        # For multiple file changes
+        commit_message="Update ${primary_file} and other files"
+    fi
     
     echo -e "${GREEN}Generated commit message:${NC}"
     echo -e "$commit_message"
