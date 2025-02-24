@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "push": "chmod +x ./git-push.sh && ./git-push.sh"
   },
   "dependencies": {
     "mongoose": "^8.10.1",
