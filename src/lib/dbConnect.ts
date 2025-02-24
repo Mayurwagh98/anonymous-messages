@@ -20,7 +20,7 @@ const connection: ConnectionObject = {};
  * @throws {Error} If the database connection fails
  */
 
-async function dbConnect() {
+async function dbConnect(): Promise<void> {
   // Return early if we already have an active connection
   if (connection.isConnected) {
     console.log("Db already connected");
