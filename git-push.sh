@@ -27,14 +27,62 @@ git status -s
 echo -e "\n${YELLOW}Staging all changes...${NC}"
 git add .
 
-# Get commit message
-echo -e "\n${YELLOW}Please enter a commit message:${NC}"
-read -p "> " commit_message
+# Ask user preference for commit message
+echo -e "\n${YELLOW}Do you want to enter a custom commit message? (y/n):${NC}"
+read -p "> " custom_message_choice
 
-# Validate commit message
-if [ -z "$commit_message" ]; then
-    echo -e "${RED}Error: Commit message cannot be empty${NC}"
-    exit 1
+if [[ $custom_message_choice =~ ^[Yy]$ ]]; then
+    # Get custom commit message
+    echo -e "\n${YELLOW}Please enter your commit message:${NC}"
+    read -p "> " commit_message
+
+    # Validate commit message
+    if [ -z "$commit_message" ]; then
+        echo -e "${RED}Error: Commit message cannot be empty${NC}"
+        exit 1
+    fi
+else
+    # Generate commit message based on changes
+    echo -e "\n${YELLOW}Generating commit message based on changes...${NC}"
+    
+    # Get summary of changes
+    files_changed=$(git diff --cached --name-status)
+    added_files=$(echo "$files_changed" | grep ^A | wc -l)
+    modified_files=$(echo "$files_changed" | grep ^M | wc -l)
+    deleted_files=$(echo "$files_changed" | grep ^D | wc -l)
+    
+    # Build commit message
+    commit_message=""
+    if [ $added_files -gt 0 ]; then
+        commit_message+="Add $added_files files"
+    fi
+    if [ $modified_files -gt 0 ]; then
+        if [ ! -z "$commit_message" ]; then
+            commit_message+=", "
+        fi
+        commit_message+="Modify $modified_files files"
+    fi
+    if [ $deleted_files -gt 0 ]; then
+        if [ ! -z "$commit_message" ]; then
+            commit_message+=", "
+        fi
+        commit_message+="Delete $deleted_files files"
+    fi
+    
+    # Add detailed changes
+    commit_message+="\n\nChanges include:\n"
+    while IFS= read -r line; do
+        status=${line:0:1}
+        file=${line:2}
+        case $status in
+            A) commit_message+="- Added: $file\n" ;;
+            M) commit_message+="- Modified: $file\n" ;;
+            D) commit_message+="- Deleted: $file\n" ;;
+        esac
+    done <<< "$files_changed"
+    
+    echo -e "${GREEN}Generated commit message:${NC}"
+    echo -e "$commit_message"
 fi
 
 # Commit changes
